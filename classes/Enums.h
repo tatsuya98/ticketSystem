@@ -1,9 +1,7 @@
 #pragma once
 enum class TicketError
 {
-    ALREADY_RESERVED,
-    ALREADY_PURCHASED,
-    CANCELLED,
+    WRONG_STATE,
     NOT_FOUND,
     INVALID_USER
 };
