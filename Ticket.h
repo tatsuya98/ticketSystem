@@ -1,8 +1,8 @@
+#pragma once
 #include <mutex>
 #include <string>
 #include <expected>
-#include <Enums.h>
-#pragma once
+#include "Enums.h"
 class Ticket
 {
 private:
@@ -17,9 +17,4 @@ public:
     std::expected<bool, TicketError> reserveTicket(std::string userId);
     std::expected<bool, TicketError> purchaseTicket(std::string userId);
     std::expected<bool, TicketError> cancelTicket(std::string userId);
-};
-struct updateData
-{
-    TicketStatus status;
-    std::string userId;
 };

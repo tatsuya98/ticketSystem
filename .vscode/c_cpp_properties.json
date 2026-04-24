@@ -3,8 +3,7 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/classes"
+                "${workspaceFolder}/**"
             ],
             "compilerPath": "C:/msys64/ucrt64/bin/g++.exe",
             "cppStandard": "c++23",
