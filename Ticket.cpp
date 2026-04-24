@@ -9,5 +9,5 @@ std::expected<bool, TicketError> Ticket::reserveTicket(std::string userId)
         this->userId = userId;
         return true;
     }
-    return std::unexpected(TicketError::ALREADY_RESERVED);
+    return std::unexpected(TicketError::WRONG_STATE);
 }
