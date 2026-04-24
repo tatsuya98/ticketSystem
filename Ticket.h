@@ -12,6 +12,7 @@ private:
     std::string userId;
     TicketStatus status;
     std::string seatId;
+    std::chrono::system_clock::time_point purchasedAt;
 
 public:
     std::expected<bool, TicketError> reserveTicket(std::string userId);

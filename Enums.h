@@ -3,7 +3,8 @@ enum class TicketError
 {
     WRONG_STATE,
     NOT_FOUND,
-    INVALID_USER
+    INVALID_USER,
+    CANCELLATION_WINDOW_EXPIRED
 };
 
 enum class TicketStatus

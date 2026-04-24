@@ -7,10 +7,6 @@ std::expected<bool, TicketError> Ticket::reserveTicket(std::string userId)
     {
         return std::unexpected(TicketError::WRONG_STATE);
     }
-    if (userId != this->userId)
-    {
-        return std::unexpected(TicketError::INVALID_USER);
-    }
     this->userId = userId;
     status = TicketStatus::RESERVED;
     return true;
@@ -34,7 +30,7 @@ std::expected<bool, TicketError> Ticket::purchaseTicket(std::string userId)
 std::expected<bool, TicketError> Ticket::cancelTicket(std::string userId)
 {
     std::lock_guard<std::mutex> lock(ticketMutex);
-    if (status != TicketStatus::RESERVED)
+    if (status != TicketStatus::RESERVED && status != TicketStatus::PURCHASED)
     {
         return std::unexpected(TicketError::WRONG_STATE);
     }
@@ -42,9 +38,16 @@ std::expected<bool, TicketError> Ticket::cancelTicket(std::string userId)
     {
         return std::unexpected(TicketError::INVALID_USER);
     }
-    if (status == TicketStatus::RESERVED || status == TicketStatus::PURCHASED)
+    if (status == TicketStatus::PURCHASED)
     {
-        status = TicketStatus::AVAILABLE;
+        auto now = std::chrono::system_clock::now();
+        auto hoursSincePurchase = std::chrono::duration_cast<std::chrono::hours>(now - purchasedAt).count();
+        if (hoursSincePurchase > 24)
+        {
+            return std::unexpected(TicketError::CANCELLATION_WINDOW_EXPIRED);
+        }
     }
+    status = TicketStatus::CANCELLED;
+    this->userId = "";
     return true;
 }
