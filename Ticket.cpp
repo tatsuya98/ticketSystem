@@ -24,6 +24,7 @@ std::expected<bool, TicketError> Ticket::purchaseTicket(std::string userId)
         return std::unexpected(TicketError::INVALID_USER);
     }
     status = TicketStatus::PURCHASED;
+    purchasedAt = std::chrono::system_clock::now();
     return true;
 }
 
