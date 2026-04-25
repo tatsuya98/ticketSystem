@@ -27,3 +27,33 @@ struct Event
     int eventPrice;
     int eventCapacity;
 };
+
+struct Venue
+{
+    std::string venueId;
+    std::string venueName;
+    std::string venueLocation;
+    int capacity;
+};
+
+struct Seat
+{
+    std::string seatId;
+    std::string rowId;
+    std::string seatNumber;
+    float xPos;
+    float yPos;
+};
+struct Section
+{
+    std::string sectionId;
+    std::string sectionName;
+    std::string venueId;
+};
+
+struct Row
+{
+    std::string rowId;
+    std::string rowName;
+    std::string sectionId;
+};
