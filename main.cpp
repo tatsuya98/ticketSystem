@@ -3,9 +3,10 @@
 #include "Ticket.h"
 #include "DTOs.h"
 #include <iostream>
+#include <libpq-fe.h>
 
 int main()
 {
-    std::cout << "Compiles clean" << std::endl;
+    std::cout << "libpq version: " << PQlibVersion() << std::endl;
     return 0;
 }

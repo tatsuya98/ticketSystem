@@ -3,6 +3,20 @@
 #include <string>
 #include <chrono>
 #include "Enums.h"
+#include <libpq-fe.h>
+
+struct PGConnRAII
+{
+    PGconn *conn;
+    PGConnRAII(const std::string &connStr)
+    {
+        conn = PQconnectdb(connStr.c_str());
+    }
+    ~PGConnRAII() // destructor
+    {
+        PQfinish(conn);
+    }
+};
 struct EventUpdate
 {
     std::optional<std::string> eventLocation;
@@ -17,7 +31,6 @@ struct TicketUpdate
     std::optional<std::string> seatId;
     std::optional<TicketStatus> status;
 };
-
 struct Event
 {
     std::string eventId;
@@ -56,4 +69,19 @@ struct Row
     std::string rowId;
     std::string rowName;
     std::string sectionId;
+};
+
+struct PGResultRAII
+{
+    PGresult *result;
+
+    PGResultRAII(PGresult *r) : result(r) {}
+
+    ~PGResultRAII()
+    {
+        if (result)
+        {
+            PQclear(result);
+        }
+    }
 };

@@ -10,6 +10,9 @@
                 "-Wall",
                 "-g",
                 "${workspaceFolder}/*.cpp",
+                "-IC:/msys64/ucrt64/include",
+                "-LC:/msys64/ucrt64/lib",
+                "-lpq",
                 "-o",
                 "${workspaceFolder}/output.exe"
             ],

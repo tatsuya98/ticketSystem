@@ -1,5 +1,4 @@
 #include "Ticket.h"
-
 std::expected<bool, TicketError> Ticket::reserveTicket(std::string userId)
 {
     std::lock_guard<std::mutex> lock(ticketMutex);
