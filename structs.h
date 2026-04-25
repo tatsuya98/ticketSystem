@@ -17,3 +17,13 @@ struct TicketUpdate
     std::optional<std::string> seatId;
     std::optional<TicketStatus> status;
 };
+
+struct Event
+{
+    std::string eventId;
+    std::string eventName;
+    std::string eventLocation;
+    std::chrono::system_clock::time_point eventDate;
+    int eventPrice;
+    int eventCapacity;
+};
