@@ -1,20 +1,8 @@
 #include <sstream>
 #include <iomanip>
 #include "ticketRepository.h"
-
+#include "Helper.h"
 TicketRepository::TicketRepository(PGconn *conn) : connection(conn) {}
-
-std::chrono::system_clock::time_point parseTimestamp(const char *str)
-{
-    if (!str || str[0] == '\0')
-    {
-        return std::chrono::system_clock::time_point{};
-    }
-    std::tm tm = {};
-    std::istringstream ss(str);
-    ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
-    return std::chrono::system_clock::from_time_t(std::mktime(&tm));
-}
 
 std::expected<std::unique_ptr<Ticket>, DatabaseError> TicketRepository::findTicketById(std::string ticketId)
 {
