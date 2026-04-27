@@ -18,4 +18,5 @@ public:
     std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> findTicketsByUserId(std::string id);
     std::expected<std::unique_ptr<Ticket>, DatabaseError> findTicketById(std::string ticketId);
     std::expected<bool, DatabaseError> updateTicket(std::string ticketId, TicketUpdate ticketUpdate);
+    std::expected<bool, DatabaseError> cancelReserve(std::string ticketId);
 };

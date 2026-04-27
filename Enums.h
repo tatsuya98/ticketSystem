@@ -20,7 +20,8 @@ enum class ServiceError
     NOT_FOUND,
     WRONG_STATE,
     INVALID_USER,
-    DATABASE_ERROR
+    DATABASE_ERROR,
+    CANCELLATION_WINDOW_EXPIRED
 };
 
 enum class DatabaseError

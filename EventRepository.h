@@ -20,4 +20,5 @@ public:
     std::expected<bool, DatabaseError> purchaseTicketTransaction(
         std::string ticketId,
         std::string eventId);
+    std::expected<bool, DatabaseError> cancelTicketTransaction(std::string ticketId, std::string eventId);
 };

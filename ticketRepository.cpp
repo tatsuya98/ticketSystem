@@ -46,3 +46,43 @@ std::expected<std::unique_ptr<Ticket>, DatabaseError> TicketRepository::findTick
     foundTicket->purchasedAt = parseTimestamp(purchasedAtValue.c_str());
     return foundTicket;
 };
+
+std::expected<bool, DatabaseError> TicketRepository::updateTicket(std::string ticketId, TicketUpdate ticketUpdate)
+{
+    char const *status = nullptr;
+    if (ticketUpdate.status.has_value())
+    {
+        switch (ticketUpdate.status.value())
+        {
+        case TicketStatus::AVAILABLE:
+            status = "AVAILABLE";
+            break;
+        case TicketStatus::RESERVED:
+            status = "RESERVED";
+            break;
+        case TicketStatus::PURCHASED:
+            status = "PURCHASED";
+            break;
+        case TicketStatus::CANCELLED:
+            status = "CANCELLED";
+            break;
+        }
+    }
+
+    const char *query = "UPDATE tickets SET status = $1 WHERE ticket_id = $2";
+    const char *params[2] = {status, ticketId.c_str()};
+    PGResultRAII result(PQexecParams(connection, query, 2, NULL, params, NULL, NULL, 0));
+    if (PQresultStatus(result.result) != PGRES_COMMAND_OK)
+        return std::unexpected(DatabaseError::QUERY_FAILED);
+    return true;
+}
+
+std::expected<bool, DatabaseError> TicketRepository::cancelReserve(std::string ticketId)
+{
+    const char *query = "UPDATE tickets SET status = 'CANCELLED', user_id = NULL WHERE ticket_id = $1";
+    const char *params[1] = {ticketId.c_str()};
+    PGResultRAII result(PQexecParams(connection, query, 1, NULL, params, NULL, NULL, 0));
+    if (PQresultStatus(result.result) != PGRES_COMMAND_OK)
+        return std::unexpected(DatabaseError::QUERY_FAILED);
+    return true;
+};

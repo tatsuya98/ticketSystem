@@ -25,4 +25,5 @@ public:
     std::expected<bool, TicketError> reserveTicket(std::string userId);
     std::expected<bool, TicketError> purchaseTicket(std::string userId);
     std::expected<bool, TicketError> cancelTicket(std::string userId);
+    std::string getEventId() { return eventId; }
 };

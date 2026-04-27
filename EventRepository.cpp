@@ -61,4 +61,32 @@ std::expected<bool, DatabaseError> EventRepository::purchaseTicketTransaction(st
     }
     PQexec(connection, "COMMIT");
     return true;
-}
+};
+
+std::expected<bool, DatabaseError> EventRepository::cancelTicketTransaction(std::string ticketId, std::string eventId)
+{
+    PGResultRAII beginResult(PQexec(connection, "BEGIN"));
+    if (PQresultStatus(beginResult.result) != PGRES_COMMAND_OK)
+    {
+        return std::unexpected(DatabaseError::QUERY_FAILED);
+    }
+    const char *updateTicket = "UPDATE tickets SET status = 'CANCELLED', user_id = NULL WHERE ticket_id = $1";
+    const char *paramsTicket[1] = {ticketId.c_str()};
+    PGResultRAII updateTicketResult(PQexecParams(connection, updateTicket, 1, NULL, paramsTicket, NULL, NULL, 0));
+    if (PQresultStatus(updateTicketResult.result) != PGRES_COMMAND_OK)
+    {
+        PQexec(connection, "ROLLBACK");
+        return std::unexpected(DatabaseError::QUERY_FAILED);
+    }
+
+    const char *updateEvent = "UPDATE events SET event_capacity = event_capacity + 1 WHERE event_id = $1";
+    const char *paramsEvent[1] = {eventId.c_str()};
+    PGResultRAII updateEventResult(PQexecParams(connection, updateEvent, 1, NULL, paramsEvent, NULL, NULL, 0));
+    if (PQresultStatus(updateEventResult.result) != PGRES_COMMAND_OK)
+    {
+        PQexec(connection, "ROLLBACK");
+        return std::unexpected(DatabaseError::QUERY_FAILED);
+    }
+    PQexec(connection, "COMMIT");
+    return true;
+};
