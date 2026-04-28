@@ -19,9 +19,9 @@ private:
 
 public:
     Ticket(std::string id, std::string eId, std::string uId,
-           TicketStatus s, std::string seat)
+           TicketStatus s, std::string seat, std::optional<std::chrono::system_clock::time_point> pAt)
         : ticketId(id), eventId(eId), userId(uId),
-          status(s), seatId(seat) {}
+          status(s), seatId(seat), purchasedAt(pAt.value_or(std::chrono::system_clock::time_point{})) {}
     std::expected<bool, TicketError> reserveTicket(std::string userId);
     std::expected<bool, TicketError> purchaseTicket(std::string userId);
     std::expected<bool, TicketError> cancelTicket(std::string userId);
