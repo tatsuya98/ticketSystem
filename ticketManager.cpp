@@ -4,7 +4,7 @@ TicketManager::TicketManager(EventRepository &eventRepo, TicketRepository &ticke
 
 std::expected<bool, ServiceError> TicketManager::handlePurchase(std::string ticketId, std::string userId)
 {
-    auto ticket = ticketRepository.findTicketById(ticketId);
+    auto ticket = ticketRepository.getTicketById(ticketId);
     if (!ticket)
     {
         return std::unexpected(ServiceError::NOT_FOUND);
@@ -33,7 +33,7 @@ std::expected<bool, ServiceError> TicketManager::handlePurchase(std::string tick
 
 std::expected<bool, ServiceError> TicketManager::handleReserve(std::string ticketId, std::string userId)
 {
-    auto ticket = ticketRepository.findTicketById(ticketId);
+    auto ticket = ticketRepository.getTicketById(ticketId);
     if (!ticket)
     {
         return std::unexpected(ServiceError::NOT_FOUND);
@@ -65,7 +65,7 @@ std::expected<bool, ServiceError> TicketManager::handleReserve(std::string ticke
 
 std::expected<bool, ServiceError> TicketManager::handleCancel(std::string ticketId, std::string userId)
 {
-    auto ticket = ticketRepository.findTicketById(ticketId);
+    auto ticket = ticketRepository.getTicketById(ticketId);
     if (!ticket)
     {
         return std::unexpected(ServiceError::NOT_FOUND);

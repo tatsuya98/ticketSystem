@@ -4,7 +4,7 @@
 #include "Helper.h"
 TicketRepository::TicketRepository(PGconn *conn) : connection(conn) {}
 
-std::expected<std::unique_ptr<Ticket>, DatabaseError> TicketRepository::findTicketById(std::string ticketId)
+std::expected<std::unique_ptr<Ticket>, DatabaseError> TicketRepository::getTicketById(std::string ticketId)
 {
     const char *query = "SELECT ticket_id, event_id, user_id, status, seat_id, purchased_at FROM tickets WHERE ticket_id = $1";
     const char *params[1] = {ticketId.c_str()};
@@ -70,7 +70,7 @@ std::expected<bool, DatabaseError> TicketRepository::cancelReserve(std::string t
     return true;
 };
 
-std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> TicketRepository::findTicketsByEventId(std::string id)
+std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> TicketRepository::getTicketsByEventId(std::string id)
 {
     const char *query = "SELECT ticket_id, event_id, user_id, status, seat_id, purchased_at FROM tickets WHERE event_id = $1 LIMIT 10";
     const char *params[1] = {id.c_str()};
@@ -100,7 +100,7 @@ std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> TicketReposit
     return tickets;
 }
 
-std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> TicketRepository::findTicketsByUserId(std::string id)
+std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> TicketRepository::getTicketsByUserId(std::string id)
 {
     const char *query = "SELECT ticket_id, event_id, user_id, status, seat_id, purchased_at FROM tickets WHERE user_id = $1 LIMIT 10";
     const char *params[1] = {id.c_str()};

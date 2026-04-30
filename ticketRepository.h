@@ -14,9 +14,9 @@ private:
 
 public:
     TicketRepository(PGconn *conn);
-    std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> findTicketsByEventId(std::string id);
-    std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> findTicketsByUserId(std::string id);
-    std::expected<std::unique_ptr<Ticket>, DatabaseError> findTicketById(std::string ticketId);
+    std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> getTicketsByEventId(std::string id);
+    std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> getTicketsByUserId(std::string id);
+    std::expected<std::unique_ptr<Ticket>, DatabaseError> getTicketById(std::string ticketId);
     std::expected<bool, DatabaseError> updateTicket(std::string ticketId, TicketUpdate ticketUpdate);
     std::expected<bool, DatabaseError> cancelReserve(std::string ticketId);
     std::unique_ptr<Ticket> mapRowToTicket(PGresult *result, int row);
