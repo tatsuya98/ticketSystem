@@ -51,3 +51,33 @@ std::expected<bool, TicketError> Ticket::cancelTicket(std::string userId)
     this->userId = "";
     return true;
 }
+
+std::string Ticket::getEventId() const
+{
+    return eventId;
+}
+
+std::string Ticket::getUserId() const
+{
+    return userId;
+}
+
+std::string Ticket::getTicketId() const
+{
+    return ticketId;
+}
+
+TicketStatus Ticket::getStatus() const
+{
+    return status;
+}
+
+std::string Ticket::getSeatId() const
+{
+    return seatId;
+}
+
+std::chrono::system_clock::time_point Ticket::getPurchasedAt() const
+{
+    return purchasedAt;
+}

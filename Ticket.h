@@ -25,5 +25,10 @@ public:
     std::expected<bool, TicketError> reserveTicket(std::string userId);
     std::expected<bool, TicketError> purchaseTicket(std::string userId);
     std::expected<bool, TicketError> cancelTicket(std::string userId);
-    std::string getEventId() { return eventId; }
+    std::string getEventId() const;
+    std::string getUserId() const;
+    std::string getTicketId() const;
+    TicketStatus getStatus() const;
+    std::string getSeatId() const;
+    std::chrono::system_clock::time_point getPurchasedAt() const;
 };

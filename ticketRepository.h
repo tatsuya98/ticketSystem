@@ -11,6 +11,7 @@ class TicketRepository
 {
 private:
     PGconn *connection;
+    std::unique_ptr<Ticket> mapRowToTicket(PGresult *result, int row);
 
 public:
     TicketRepository(PGconn *conn);
@@ -19,5 +20,8 @@ public:
     std::expected<std::unique_ptr<Ticket>, DatabaseError> getTicketById(std::string ticketId);
     std::expected<bool, DatabaseError> updateTicket(std::string ticketId, TicketUpdate ticketUpdate);
     std::expected<bool, DatabaseError> cancelReserve(std::string ticketId);
-    std::unique_ptr<Ticket> mapRowToTicket(PGresult *result, int row);
+    std::expected<std::vector<UserTicketDTO>, DatabaseError>
+    getTicketHistoryByUserId(std::string userId, int limit, int offset);
+    std::expected<std::vector<SeatMapDTO>, DatabaseError>
+    getSeatMapByEvent(std::string eventId, std::string venueId);
 };
