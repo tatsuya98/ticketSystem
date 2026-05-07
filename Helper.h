@@ -15,3 +15,8 @@ inline std::chrono::system_clock::time_point parseTimestamp(const char *str)
     ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
     return std::chrono::system_clock::from_time_t(std::mktime(&tm));
 }
+
+inline bool isTicketAvailable(TicketStatus status)
+{
+    return status == TicketStatus::AVAILABLE || status == TicketStatus::CANCELLED;
+}

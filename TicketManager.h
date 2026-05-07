@@ -6,6 +6,7 @@
 #include <string>
 #include "Enums.h"
 #include "Structs.h"
+#include "DTOs.h"
 
 class TicketManager
 {

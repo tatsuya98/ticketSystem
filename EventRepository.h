@@ -13,10 +13,9 @@ private:
 
 public:
     EventRepository(PGconn *conn);
-    std::expected<std::vector<std::unique_ptr<Event>>, DatabaseError> getAllEvents();
-    std::expected<std::vector<std::unique_ptr<EventSummaryDTO>>, DatabaseError> getEventsByCity(std::string city);
-    std::expected<std::unique_ptr<Event>, DatabaseError> getEventById(std::string eventId);
-    std::expected<std::unique_ptr<Event>, DatabaseError> getEventByName(std::string eventName);
+    std::expected<std::vector<EventSummaryDTO>, DatabaseError> getAllEvents(int limit, int offset);
+    std::expected<EventDetailDTO, DatabaseError> getEventById(std::string eventId);
+    std::expected<EventDetailDTO, DatabaseError> getEventByName(std::string eventName);
     std::expected<bool, DatabaseError> updateEvent(std::string eventId, EventUpdate eventUpdate);
     std::expected<bool, DatabaseError> purchaseTicketTransaction(
         std::string ticketId,

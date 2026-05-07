@@ -28,33 +28,62 @@ std::expected<std::unique_ptr<Ticket>, DatabaseError> TicketRepository::getTicke
 std::expected<bool, DatabaseError> TicketRepository::updateTicket(std::string ticketId, TicketUpdate ticketUpdate)
 {
 
-    if (!ticketUpdate.status.has_value())
-    {
-        return true; // no need to update
-    }
-    char const *status = nullptr;
+    std::string query = "UPDATE tickets SET ";
+    std::vector<std::string> updateValues;
+    std::vector<std::string> setClauses;
+    std::vector<const char *> params;
+
     if (ticketUpdate.status.has_value())
     {
         switch (ticketUpdate.status.value())
         {
-        case TicketStatus::AVAILABLE:
-            status = "AVAILABLE";
+        case TicketStatus::PURCHASED:
+            updateValues.push_back("PURCHASED");
             break;
         case TicketStatus::RESERVED:
-            status = "RESERVED";
-            break;
-        case TicketStatus::PURCHASED:
-            status = "PURCHASED";
+            updateValues.push_back("RESERVED");
             break;
         case TicketStatus::CANCELLED:
-            status = "CANCELLED";
+            updateValues.push_back("CANCELLED");
+            break;
+        default:
             break;
         }
+        setClauses.push_back("status = $" + std::to_string(updateValues.size()));
+    }
+    if (ticketUpdate.seatId.has_value())
+    {
+        updateValues.push_back(ticketUpdate.seatId.value());
+        setClauses.push_back("seat_id = $" + std::to_string(updateValues.size()));
+    }
+    if (ticketUpdate.userId.has_value())
+    {
+        updateValues.push_back(ticketUpdate.userId.value());
+        setClauses.push_back("user_id = $" + std::to_string(updateValues.size()));
     }
 
-    const char *query = "UPDATE tickets SET status = $1 WHERE ticket_id = $2";
-    const char *params[2] = {status, ticketId.c_str()};
-    PGResultRAII result(PQexecParams(connection, query, 2, NULL, params, NULL, NULL, 0));
+    if (setClauses.size() == 0)
+    {
+        return true;
+    }
+
+    for (int i = 0; i < setClauses.size(); i++)
+    {
+        query += setClauses[i];
+        if (i < setClauses.size() - 1)
+        {
+            query += ", ";
+        }
+    }
+    updateValues.push_back(ticketId);
+    query += " WHERE ticket_id =$" + std::to_string(updateValues.size());
+
+    for (int i = 0; i < updateValues.size(); i++)
+    {
+        params.push_back(updateValues[i].c_str());
+    }
+
+    PGResultRAII result(PQexecParams(connection, query.c_str(), updateValues.size(), NULL, params.data(), NULL, NULL, 0));
     if (PQresultStatus(result.result) != PGRES_COMMAND_OK)
         return std::unexpected(DatabaseError::QUERY_FAILED);
     return true;
@@ -72,7 +101,7 @@ std::expected<bool, DatabaseError> TicketRepository::cancelReserve(std::string t
 
 std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> TicketRepository::getTicketsByEventId(std::string id)
 {
-    const char *query = "SELECT ticket_id, event_id, user_id, status, seat_id, purchased_at FROM tickets WHERE event_id = $1 LIMIT 10";
+    const char *query = "SELECT ticket_id, event_id, user_id, status, seat_id, purchased_at FROM tickets WHERE event_id = $1";
     const char *params[1] = {id.c_str()};
     PGResultRAII result(PQexecParams(connection, query, 1, NULL, params, NULL, NULL, 0));
     if (PQresultStatus(result.result) != PGRES_TUPLES_OK)
@@ -160,4 +189,101 @@ std::unique_ptr<Ticket> TicketRepository::mapRowToTicket(PGresult *result, int r
         ticketIdValue, eventIdValue, userIdValue,
         status, seatIdValue,
         parseTimestamp(purchasedAtValue.c_str()));
+}
+
+std::expected<std::vector<UserTicketDTO>, DatabaseError> TicketRepository::getTicketHistoryByUserId(std::string userId, int limit, int offset)
+{
+    const char *query = "SELECT t.ticket_id, e.event_id, t.user_id, t.status, t.seat_id, v.venue_address, e.event_date, e.event_name"
+                        " FROM tickets t JOIN events e ON t.event_id = e.event_id JOIN venues v ON e.venue_id = v.venue_id"
+                        " WHERE t.user_id = $1 ORDER BY e.event_date DESC LIMIT $2 OFFSET $3;";
+    std::string limitStr = std::to_string(limit);
+    std::string offsetStr = std::to_string(offset);
+    const char *params[3] = {userId.c_str(), limitStr.c_str(), offsetStr.c_str()};
+    PGResultRAII result(PQexecParams(connection, query, 3, NULL, params, NULL, NULL, 0));
+    if (PQresultStatus(result.result) != PGRES_TUPLES_OK)
+    {
+        return std::unexpected(DatabaseError::QUERY_FAILED);
+    }
+    if (PQntuples(result.result) == 0)
+    {
+        return std::unexpected(DatabaseError::NOT_FOUND);
+    }
+    int ticketIdCol = PQfnumber(result.result, "ticket_id");
+    int seatIdCol = PQfnumber(result.result, "seat_id");
+    int statusCol = PQfnumber(result.result, "status");
+    int eventIdCol = PQfnumber(result.result, "event_id");
+    int userIdCol = PQfnumber(result.result, "user_id");
+    int venueAddressCol = PQfnumber(result.result, "venue_address");
+    int eventDateCol = PQfnumber(result.result, "event_date");
+    int eventNameCol = PQfnumber(result.result, "event_name");
+    if (ticketIdCol == -1 || seatIdCol == -1 || statusCol == -1 || eventIdCol == -1 || userIdCol == -1 || venueAddressCol == -1 || eventDateCol == -1 || eventNameCol == -1)
+        return std::unexpected(DatabaseError::QUERY_FAILED);
+    std::vector<UserTicketDTO> tickets;
+    for (int i = 0; i < PQntuples(result.result); i++)
+    {
+        UserTicketDTO ticketInfoToDisplay;
+        ticketInfoToDisplay.ticketId = PQgetvalue(result.result, i, ticketIdCol);
+        ticketInfoToDisplay.eventName = PQgetvalue(result.result, i, eventNameCol);
+        ticketInfoToDisplay.eventLocation = PQgetvalue(result.result, i, venueAddressCol);
+        ticketInfoToDisplay.eventDate = parseTimestamp(PQgetvalue(result.result, i, eventDateCol));
+        ticketInfoToDisplay.seatId = PQgetvalue(result.result, i, seatIdCol);
+        std::string statusValue = PQgetvalue(result.result, i, statusCol);
+        if (statusValue == "PURCHASED")
+        {
+            ticketInfoToDisplay.status = TicketStatus::PURCHASED;
+        }
+        tickets.push_back(ticketInfoToDisplay);
+    }
+    return tickets;
+}
+
+std::expected<std::vector<SeatMapDTO>, DatabaseError> TicketRepository::getSeatMapByEvent(std::string eventId, std::string venueId)
+{
+    const char *query = "SELECT s.seat_id, r.row_name, sec.section_name, s.seat_number, s.x_position, s.y_position, t.status"
+                        " FROM seats s JOIN rows r ON s.row_id = r.row_id JOIN sections sec ON sec.section_id = r.section_id"
+                        " LEFT JOIN tickets t ON t.seat_id = s.seat_id AND t.event_id = $1"
+                        " WHERE sec.venue_id = $2";
+    const char *params[2] = {eventId.c_str(), venueId.c_str()};
+
+    PGResultRAII result(PQexecParams(connection, query, 2, NULL, params, NULL, NULL, 0));
+
+    if (PQresultStatus(result.result) != PGRES_TUPLES_OK)
+    {
+        return std::unexpected(DatabaseError::QUERY_FAILED);
+    }
+
+    if (PQntuples(result.result) == 0)
+    {
+        return std::unexpected(DatabaseError::NOT_FOUND);
+    }
+
+    int seatIdCol = PQfnumber(result.result, "seat_id");
+    int rowNameCol = PQfnumber(result.result, "row_name");
+    int sectionNameCol = PQfnumber(result.result, "section_name");
+    int seatNumberCol = PQfnumber(result.result, "seat_number");
+    int xPositionCol = PQfnumber(result.result, "x_position");
+    int yPositionCol = PQfnumber(result.result, "y_position");
+    int statusCol = PQfnumber(result.result, "status");
+
+    if (seatIdCol == -1 || rowNameCol == -1 || sectionNameCol == -1 || seatNumberCol == -1 || xPositionCol == -1 || yPositionCol == -1 || statusCol == -1)
+    {
+        return std::unexpected(DatabaseError::QUERY_FAILED);
+    }
+
+    std::vector<SeatMapDTO> seatMap;
+    for (int i = 0; i < PQntuples(result.result); i++)
+    {
+        SeatMapDTO seatInfoToDisplay;
+        seatInfoToDisplay.seatId = PQgetvalue(result.result, i, seatIdCol);
+        seatInfoToDisplay.rowName = PQgetvalue(result.result, i, rowNameCol);
+        seatInfoToDisplay.sectionName = PQgetvalue(result.result, i, sectionNameCol);
+        seatInfoToDisplay.seatNumber = PQgetvalue(result.result, i, seatNumberCol);
+        seatInfoToDisplay.xPosition = std::stof(PQgetvalue(result.result, i, xPositionCol));
+        seatInfoToDisplay.yPosition = std::stof(PQgetvalue(result.result, i, yPositionCol));
+        std::string statusStr = PQgetvalue(result.result, i, statusCol);
+        seatInfoToDisplay.isAvailable = (statusStr[0] == '\0' || statusStr == "AVAILABLE" || statusStr == "CANCELLED");
+        seatMap.push_back(seatInfoToDisplay);
+    }
+
+    return seatMap;
 }

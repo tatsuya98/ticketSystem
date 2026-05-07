@@ -5,6 +5,7 @@
 #include "Enums.h"
 #include "Structs.h"
 #include "Ticket.h"
+#include "DTOs.h"
 #include <memory>
 #include <libpq-fe.h>
 class TicketRepository

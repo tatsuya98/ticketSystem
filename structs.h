@@ -19,7 +19,7 @@ struct PGConnRAII
 };
 struct EventUpdate
 {
-    std::optional<std::string> eventLocation;
+    std::optional<std::string> venueId;
     std::optional<int> eventCapacity;
     std::optional<std::chrono::system_clock::time_point> eventDate;
     std::optional<int> eventPrice;
@@ -35,7 +35,7 @@ struct Event
 {
     std::string eventId;
     std::string eventName;
-    std::string eventLocation;
+    std::string venueId;
     std::chrono::system_clock::time_point eventDate;
     int eventPrice;
     int eventCapacity;
@@ -45,7 +45,8 @@ struct Venue
 {
     std::string venueId;
     std::string venueName;
-    std::string venueLocation;
+    std::string venueCity;
+    std::string venueAddress;
     int capacity;
 };
 

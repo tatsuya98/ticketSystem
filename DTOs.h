@@ -32,23 +32,26 @@ struct CheckInDTO
     std::string eventId;
 };
 
-struct EventSummaryDTO
-{
-    std::string eventId;
-    std::string eventName;
-    std::string eventLocation;
-    std::chrono::system_clock::time_point eventDate;
-    int price;
-    int capacity;
-};
-
 struct EventDetailDTO
 {
     std::string eventId;
     std::string eventName;
-    std::string eventLocation;
+    std::string venueId;
+    std::string venueName;
+    std::string venueCity;
+    std::string venueAddress;
     std::chrono::system_clock::time_point eventDate;
-    int price;
-    int capacity;
-    std::vector<SeatMapDTO> availableSeats;
+    int eventPrice;
+    int eventCapacity;
+};
+
+struct EventSummaryDTO
+{
+    std::string eventId;
+    std::string eventName;
+    std::string venueAddress;
+    std::string venueCity;
+    std::chrono::system_clock::time_point eventDate;
+    int eventPrice;
+    int eventCapacity;
 };
