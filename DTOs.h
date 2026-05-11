@@ -51,6 +51,7 @@ struct EventSummaryDTO
     std::string eventName;
     std::string venueAddress;
     std::string venueCity;
+    std::string venueName;
     std::chrono::system_clock::time_point eventDate;
     int eventPrice;
     int eventCapacity;

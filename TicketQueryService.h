@@ -17,7 +17,7 @@ private:
 public:
     TicketQueryService(TicketRepository &ticketRepo, EventRepository &eventRepo);
     std::expected<std::vector<UserTicketDTO>, ServiceError> findTicketsByUserId(std::string id);
-    std::expected<std::vector<Ticket>, ServiceError> findTicketsByEventId(std::string id);
+    std::expected<std::vector<SeatMapDTO>, ServiceError> findTicketsByEventId(std::string id);
     std::expected<std::vector<EventDetailDTO>, ServiceError> findAllEvents();
     std::expected<std::vector<EventDetailDTO>, ServiceError> findEventsByLocation(std::string location);
     std::expected<CheckInDTO, ServiceError> findTicketForCheckIn(std::string ticketId);

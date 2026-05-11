@@ -10,6 +10,8 @@ class EventRepository
 {
 private:
     PGconn *connection;
+    EventDetailDTO mapToEventDetailDTO(PGresult *result, int row);
+    EventSummaryDTO mapToEventSummaryDTO(PGresult *result, int row);
 
 public:
     EventRepository(PGconn *conn);

@@ -24,26 +24,8 @@ std::expected<EventDetailDTO, DatabaseError> EventRepository::getEventById(std::
     int eventCapacityCol = PQfnumber(result.result, "event_capacity");
     if (eventIdCol == -1 || eventNameCol == -1 || venueAddressCol == -1 || venueNameCol == -1 || venueCityCol == -1 || venueIdCol == -1 || eventDateCol == -1 || eventPriceCol == -1 || eventCapacityCol == -1)
         return std::unexpected(DatabaseError::QUERY_FAILED);
-    std::string eventIdValue = PQgetvalue(result.result, 0, eventIdCol);
-    std::string eventNameValue = PQgetvalue(result.result, 0, eventNameCol);
-    std::string venueAddressValue = PQgetvalue(result.result, 0, venueAddressCol);
-    std::string venueNameValue = PQgetvalue(result.result, 0, venueNameCol);
-    std::string venueCityValue = PQgetvalue(result.result, 0, venueCityCol);
-    std::string venueIdValue = PQgetvalue(result.result, 0, venueIdCol);
-    std::string eventDateValue = PQgetvalue(result.result, 0, eventDateCol);
-    std::string eventPriceValue = PQgetvalue(result.result, 0, eventPriceCol);
-    std::string eventCapacityValue = PQgetvalue(result.result, 0, eventCapacityCol);
-    EventDetailDTO foundEvent;
-    foundEvent.eventId = eventIdValue;
-    foundEvent.eventName = eventNameValue;
-    foundEvent.venueName = venueNameValue;
-    foundEvent.venueCity = venueCityValue;
-    foundEvent.venueAddress = venueAddressValue;
-    foundEvent.venueId = venueIdValue;
-    foundEvent.eventDate = parseTimestamp(eventDateValue.c_str());
-    foundEvent.eventPrice = std::stoi(eventPriceValue);
-    foundEvent.eventCapacity = std::stoi(eventCapacityValue);
-    return foundEvent;
+
+    return mapToEventDetailDTO(result.result, 0);
 }
 
 std::expected<bool, DatabaseError> EventRepository::purchaseTicketTransaction(std::string ticketId, std::string eventId)
@@ -104,7 +86,7 @@ std::expected<bool, DatabaseError> EventRepository::cancelTicketTransaction(std:
 
 std::expected<std::vector<EventSummaryDTO>, DatabaseError> EventRepository::getAllEvents(int limit, int offset)
 {
-    const char *query = "SELECT e.event_id, e.event_name, v.venue_name, v.venue_city, e.event_date, e.event_price, e.event_capacity"
+    const char *query = "SELECT e.event_id, e.event_name, v.venue_name, v.venue_city, v.venue_address, e.event_date, e.event_price, e.event_capacity"
                         " FROM events e JOIN venues v ON e.venue_id = v.venue_id LIMIT $1 OFFSET $2";
     const char *params[2] = {std::to_string(limit).c_str(), std::to_string(offset).c_str()};
     PGResultRAII result(PQexecParams(connection, query, 2, NULL, params, NULL, NULL, 0));
@@ -121,29 +103,15 @@ std::expected<std::vector<EventSummaryDTO>, DatabaseError> EventRepository::getA
     int eventNameCol = PQfnumber(result.result, "event_name");
     int venueCityCol = PQfnumber(result.result, "venue_city");
     int venueAddressCol = PQfnumber(result.result, "venue_address");
+    int venueNameCol = PQfnumber(result.result, "venue_name");
     int eventDateCol = PQfnumber(result.result, "event_date");
     int eventPriceCol = PQfnumber(result.result, "event_price");
     int eventCapacityCol = PQfnumber(result.result, "event_capacity");
-    if (eventIdCol == -1 || eventNameCol == -1 || venueCityCol == -1 || venueAddressCol == -1 || eventDateCol == -1 || eventPriceCol == -1 || eventCapacityCol == -1)
+    if (eventIdCol == -1 || eventNameCol == -1 || venueCityCol == -1 || venueAddressCol == -1 || venueNameCol == -1 || eventDateCol == -1 || eventPriceCol == -1 || eventCapacityCol == -1)
         return std::unexpected(DatabaseError::QUERY_FAILED);
     for (int i = 0; i < PQntuples(result.result); i++)
     {
-        std::string eventIdValue = PQgetvalue(result.result, i, eventIdCol);
-        std::string eventNameValue = PQgetvalue(result.result, i, eventNameCol);
-        std::string venueCityValue = PQgetvalue(result.result, i, venueCityCol);
-        std::string venueAddressValue = PQgetvalue(result.result, i, venueAddressCol);
-        std::string eventDateValue = PQgetvalue(result.result, i, eventDateCol);
-        std::string eventPriceValue = PQgetvalue(result.result, i, eventPriceCol);
-        std::string eventCapacityValue = PQgetvalue(result.result, i, eventCapacityCol);
-        EventSummaryDTO foundEvent;
-        foundEvent.eventId = eventIdValue;
-        foundEvent.eventName = eventNameValue;
-        foundEvent.venueCity = venueCityValue;
-        foundEvent.venueAddress = venueAddressValue;
-        foundEvent.eventDate = parseTimestamp(eventDateValue.c_str());
-        foundEvent.eventPrice = std::stoi(eventPriceValue);
-        foundEvent.eventCapacity = std::stoi(eventCapacityValue);
-        events.push_back(std::move(foundEvent));
+        events.push_back(std::move(mapToEventSummaryDTO(result.result, i)));
     }
     return events;
 };
@@ -171,32 +139,16 @@ std::expected<std::vector<EventSummaryDTO>, DatabaseError> EventRepository::getE
     int eventDateCol = PQfnumber(result.result, "event_date");
     int eventPriceCol = PQfnumber(result.result, "event_price");
     int eventCapacityCol = PQfnumber(result.result, "event_capacity");
-    if (eventIdCol == -1 || eventNameCol == -1 || venueCityCol == -1 || eventDateCol == -1 || eventPriceCol == -1 || eventCapacityCol == -1)
+    if (eventIdCol == -1 || eventNameCol == -1 || venueCityCol == -1 || venueAddressCol == -1 || eventDateCol == -1 || eventPriceCol == -1 || eventCapacityCol == -1)
         return std::unexpected(DatabaseError::QUERY_FAILED);
     for (int i = 0; i < PQntuples(result.result); i++)
     {
-        std::string eventIdValue = PQgetvalue(result.result, i, eventIdCol);
-        std::string eventNameValue = PQgetvalue(result.result, i, eventNameCol);
-        std::string venueCityValue = PQgetvalue(result.result, i, venueCityCol);
-        std::string venueAddressValue = PQgetvalue(result.result, i, venueAddressCol);
-        std::string eventDateValue = PQgetvalue(result.result, i, eventDateCol);
-        std::string eventPriceValue = PQgetvalue(result.result, i, eventPriceCol);
-        std::string eventCapacityValue = PQgetvalue(result.result, i, eventCapacityCol);
-        EventSummaryDTO foundEvent;
-        foundEvent.eventId = eventIdValue;
-        foundEvent.eventName = eventNameValue;
-        foundEvent.venueCity = venueCityValue;
-        foundEvent.venueAddress = venueAddressValue;
-        foundEvent.eventDate = parseTimestamp(eventDateValue.c_str());
-        foundEvent.eventPrice = std::stoi(eventPriceValue);
-        foundEvent.eventCapacity = std::stoi(eventCapacityValue);
-        events.push_back(std::move(foundEvent));
+        events.push_back(std::move(mapToEventSummaryDTO(result.result, i)));
     }
     return events;
 }
 
-std::expected<bool, DatabaseError> EventRepository::updateEvent(
-    std::string eventId, EventUpdate eventUpdate)
+std::expected<bool, DatabaseError> EventRepository::updateEvent(std::string eventId, EventUpdate eventUpdate)
 {
     std::string query = "UPDATE events SET ";
     std::vector<std::string> setClauses;
@@ -231,11 +183,11 @@ std::expected<bool, DatabaseError> EventRepository::updateEvent(
     }
 
     // join SET clauses with commas
-    for (int i = 0; i < setClauses.size(); i++)
+    for (size_t i = 0; i < setClauses.size(); i++)
     {
-        query += setClauses[i];
-        if (i < setClauses.size() - 1)
+        if (i > 0)
             query += ", ";
+        query += setClauses[i];
     }
 
     // add WHERE clause — eventId is always the last param
@@ -276,40 +228,28 @@ std::expected<EventDetailDTO, DatabaseError> EventRepository::getEventDetailsByI
     int eventIdCol = PQfnumber(eventResult.result, "event_id");
     int eventNameCol = PQfnumber(eventResult.result, "event_name");
     int venueAddressCol = PQfnumber(eventResult.result, "venue_address");
-    int venueCityCOl = PQfnumber(eventResult.result, "venue_city");
+    int venueCityCol = PQfnumber(eventResult.result, "venue_city");
     int eventDateCol = PQfnumber(eventResult.result, "event_date");
     int eventPriceCol = PQfnumber(eventResult.result, "event_price");
     int eventCapacityCol = PQfnumber(eventResult.result, "event_capacity");
-    if (eventIdCol == -1 || eventNameCol == -1 || venueAddressCol == -1 || eventDateCol == -1 || eventPriceCol == -1 || eventCapacityCol == -1)
+    if (eventIdCol == -1 || eventNameCol == -1 || venueAddressCol == -1 || venueCityCol == -1 || eventDateCol == -1 || eventPriceCol == -1 || eventCapacityCol == -1)
     {
         return std::unexpected(DatabaseError::QUERY_FAILED);
     }
-    std::string eventIdValue = PQgetvalue(eventResult.result, 0, eventIdCol);
-    std::string eventNameValue = PQgetvalue(eventResult.result, 0, eventNameCol);
-    std::string venueAddressValue = PQgetvalue(eventResult.result, 0, venueAddressCol);
-    std::string venueCityValue = PQgetvalue(eventResult.result, 0, venueCityCOl);
-    std::string eventDateValue = PQgetvalue(eventResult.result, 0, eventDateCol);
-    std::string eventPriceValue = PQgetvalue(eventResult.result, 0, eventPriceCol);
-    std::string eventCapacityValue = PQgetvalue(eventResult.result, 0, eventCapacityCol);
-    EventDetailDTO foundEvent;
-    foundEvent.eventId = eventIdValue;
-    foundEvent.eventName = eventNameValue;
-    foundEvent.venueAddress = venueAddressValue;
-    foundEvent.venueCity = venueCityValue;
-    foundEvent.eventDate = parseTimestamp(eventDateValue.c_str());
-    foundEvent.eventPrice = std::stoi(eventPriceValue);
-    foundEvent.eventCapacity = std::stoi(eventCapacityValue);
-    return foundEvent;
+
+    return mapToEventDetailDTO(eventResult.result, 0);
 }
 
 std::expected<std::vector<EventSummaryDTO>, DatabaseError> EventRepository::getAllEventsWithVenue(int limit, int offset)
 {
     const char *query = "SELECT e.event_id, e.event_name, e.event_date, e.event_price"
-                        ", e.event_capacity, v.venue_address, v.venue_city"
+                        ", e.event_capacity, v.venue_address, v.venue_city, v.venue_name"
                         " FROM events e JOIN venues v ON e.venue_id = v.venue_id"
                         " ORDER BY event_date ASC"
                         " LIMIT $1 OFFSET $2";
-    const char *params[2] = {std::to_string(limit).c_str(), std::to_string(offset).c_str()};
+    std::string limitStr = std::to_string(limit);
+    std::string offsetStr = std::to_string(offset);
+    const char *params[2] = {limitStr.c_str(), offsetStr.c_str()};
     PGResultRAII result(PQexecParams(connection, query, 2, NULL, params, NULL, NULL, 0));
     if (PQresultStatus(result.result) != PGRES_TUPLES_OK)
     {
@@ -326,22 +266,64 @@ std::expected<std::vector<EventSummaryDTO>, DatabaseError> EventRepository::getA
     int eventCapacityCol = PQfnumber(result.result, "event_capacity");
     int venueAddressCol = PQfnumber(result.result, "venue_address");
     int venueCityCol = PQfnumber(result.result, "venue_city");
-    if (eventIdCol == -1 || eventNameCol == -1 || eventDateCol == -1 || eventPriceCol == -1 || eventCapacityCol == -1 || venueAddressCol == -1 || venueCityCol == -1)
+    int venueNameCol = PQfnumber(result.result, "venue_name");
+    if (eventIdCol == -1 || eventNameCol == -1 || eventDateCol == -1 || eventPriceCol == -1 || eventCapacityCol == -1 || venueAddressCol == -1 || venueCityCol == -1 || venueNameCol == -1)
     {
         return std::unexpected(DatabaseError::QUERY_FAILED);
     }
     std::vector<EventSummaryDTO> events;
     for (int i = 0; i < PQntuples(result.result); i++)
     {
-        EventSummaryDTO event;
-        event.eventId = PQgetvalue(result.result, i, eventIdCol);
-        event.eventName = PQgetvalue(result.result, i, eventNameCol);
-        event.eventDate = parseTimestamp(PQgetvalue(result.result, i, eventDateCol));
-        event.eventPrice = std::stoi(PQgetvalue(result.result, i, eventPriceCol));
-        event.eventCapacity = std::stoi(PQgetvalue(result.result, i, eventCapacityCol));
-        event.venueAddress = PQgetvalue(result.result, i, venueAddressCol);
-        event.venueCity = PQgetvalue(result.result, i, venueCityCol);
-        events.push_back(event);
+        events.push_back(std::move(mapToEventSummaryDTO(result.result, i)));
     }
     return events;
+}
+
+EventDetailDTO EventRepository::mapToEventDetailDTO(PGresult *result, int row)
+{
+    int eventIdCol = PQfnumber(result, "event_id");
+    int eventNameCol = PQfnumber(result, "event_name");
+    int venueAddressCol = PQfnumber(result, "venue_address");
+    int venueCityCol = PQfnumber(result, "venue_city");
+    int eventDateCol = PQfnumber(result, "event_date");
+    int eventPriceCol = PQfnumber(result, "event_price");
+    int eventCapacityCol = PQfnumber(result, "event_capacity");
+    std::string eventIdValue = PQgetvalue(result, row, eventIdCol);
+    std::string eventNameValue = PQgetvalue(result, row, eventNameCol);
+    std::string venueAddressValue = PQgetvalue(result, row, venueAddressCol);
+    std::string venueCityValue = PQgetvalue(result, row, venueCityCol);
+    std::string eventDateValue = PQgetvalue(result, row, eventDateCol);
+    std::string eventPriceValue = PQgetvalue(result, row, eventPriceCol);
+    std::string eventCapacityValue = PQgetvalue(result, row, eventCapacityCol);
+    EventDetailDTO foundEvent;
+    foundEvent.eventId = eventIdValue;
+    foundEvent.eventName = eventNameValue;
+    foundEvent.venueAddress = venueAddressValue;
+    foundEvent.venueCity = venueCityValue;
+    foundEvent.eventDate = parseTimestamp(eventDateValue.c_str());
+    foundEvent.eventPrice = std::stoi(eventPriceValue);
+    foundEvent.eventCapacity = std::stoi(eventCapacityValue);
+    return foundEvent;
+}
+
+EventSummaryDTO EventRepository::mapToEventSummaryDTO(PGresult *result, int row)
+{
+    int eventIdCol = PQfnumber(result, "event_id");
+    int eventNameCol = PQfnumber(result, "event_name");
+    int eventDateCol = PQfnumber(result, "event_date");
+    int eventPriceCol = PQfnumber(result, "event_price");
+    int eventCapacityCol = PQfnumber(result, "event_capacity");
+    int venueAddressCol = PQfnumber(result, "venue_address");
+    int venueCityCol = PQfnumber(result, "venue_city");
+    int venueNameCol = PQfnumber(result, "venue_name");
+    EventSummaryDTO event;
+    event.eventId = PQgetvalue(result, row, eventIdCol);
+    event.eventName = PQgetvalue(result, row, eventNameCol);
+    event.eventDate = parseTimestamp(PQgetvalue(result, row, eventDateCol));
+    event.eventPrice = std::stoi(PQgetvalue(result, row, eventPriceCol));
+    event.eventCapacity = std::stoi(PQgetvalue(result, row, eventCapacityCol));
+    event.venueAddress = PQgetvalue(result, row, venueAddressCol);
+    event.venueCity = PQgetvalue(result, row, venueCityCol);
+    event.venueName = PQgetvalue(result, row, venueNameCol);
+    return event;
 }

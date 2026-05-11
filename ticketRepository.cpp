@@ -21,7 +21,9 @@ std::expected<std::unique_ptr<Ticket>, DatabaseError> TicketRepository::getTicke
     int ticketSeatIdCol = PQfnumber(result.result, "seat_id");
     int ticketPurchasedAtCol = PQfnumber(result.result, "purchased_at");
     if (ticketEventIdCol == -1 || ticketIdCol == -1 || ticketUserIdCol == -1 || ticketStatusCol == -1 || ticketSeatIdCol == -1 || ticketPurchasedAtCol == -1)
+    {
         return std::unexpected(DatabaseError::QUERY_FAILED);
+    }
     return mapRowToTicket(result.result, 0);
 };
 
@@ -67,18 +69,16 @@ std::expected<bool, DatabaseError> TicketRepository::updateTicket(std::string ti
         return true;
     }
 
-    for (int i = 0; i < setClauses.size(); i++)
+    for (size_t i = 0; i < setClauses.size(); i++)
     {
-        query += setClauses[i];
-        if (i < setClauses.size() - 1)
-        {
+        if (i > 0)
             query += ", ";
-        }
+        query += setClauses[i];
     }
     updateValues.push_back(ticketId);
     query += " WHERE ticket_id =$" + std::to_string(updateValues.size());
 
-    for (int i = 0; i < updateValues.size(); i++)
+    for (int i = 0; i < (int)updateValues.size(); i++)
     {
         params.push_back(updateValues[i].c_str());
     }
@@ -124,7 +124,7 @@ std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> TicketReposit
     for (int i = 0; i < PQntuples(result.result); i++)
     {
 
-        tickets.push_back(mapRowToTicket(result.result, i));
+        tickets.push_back(std::move(mapRowToTicket(result.result, i)));
     }
     return tickets;
 }
@@ -154,7 +154,7 @@ std::expected<std::vector<std::unique_ptr<Ticket>>, DatabaseError> TicketReposit
     for (int i = 0; i < PQntuples(result.result); i++)
     {
 
-        tickets.push_back(mapRowToTicket(result.result, i));
+        tickets.push_back(std::move(mapRowToTicket(result.result, i)));
     }
     return tickets;
 }
@@ -232,7 +232,7 @@ std::expected<std::vector<UserTicketDTO>, DatabaseError> TicketRepository::getTi
         {
             ticketInfoToDisplay.status = TicketStatus::PURCHASED;
         }
-        tickets.push_back(ticketInfoToDisplay);
+        tickets.push_back(std::move(ticketInfoToDisplay));
     }
     return tickets;
 }
